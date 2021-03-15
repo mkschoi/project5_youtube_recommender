@@ -34,17 +34,17 @@ st.markdown("**General**: ")
 st.text("\n")
 st.markdown("**Which topic would you like to learn about?**")
 
-session_state = SessionState.get(topic="", duration="", upload_date="", search_button_init=False)
+session_state = SessionState.get(search_button_init=False)
 
-session_state.topic = st.selectbox('Select a topic:', options=['', 'Valuation', 'Competitive Moats', 'Passive Investing', 'Technology Stocks', 'General'],)
+topic = st.selectbox('Select a topic:', options=['', 'Valuation', 'Competitive Moats', 'Passive Investing', 'Technology Stocks', 'General'],)
 
 st.markdown("**How long would you like your videos to be (in minutes)?**")
 
-session_state.duration = st.slider('Less than:', 0, 120, 30)
+duration = st.slider('Less than:', 0, 120, 30)
 
 st.markdown("**How recent would you like your videos to be (in months since upload date)?**")
 
-session_state.upload_date = st.slider('Less than:', 1, 60, 12)
+upload_date = st.slider('Less than:', 1, 60, 12)
 
 search_button_init = st.button('Search for recommended videos', key=1)
 
@@ -81,8 +81,8 @@ if search_button_init:
     session_state.search_button_init = True
         
 if session_state.search_button_init:
-    df_videos_recs_init = initial_recommender(df_videos_cleaned_v9, session_state.topic, session_state.duration, session_state.upload_date)[0]
-    df_videos_filtered = initial_recommender(df_videos_cleaned_v9, session_state.topic, session_state.duration, session_state.upload_date)[1]
+    df_videos_recs_init = initial_recommender(df_videos_cleaned_v9, topic, duration, upload_date)[0]
+    df_videos_filtered = initial_recommender(df_videos_cleaned_v9, topic, duration, upload_date)[1]
     init_embedded_rec_videos(df_videos_recs_init)
     
     st.header('Follow-up Video Recommender')
