@@ -42,6 +42,7 @@ st.text("\n")
 
 image = Image.open('title_image.jpeg')
 st.image(image)
+st.markdown("_Source: Barron's_")
         
 toc = Toc()
 
@@ -49,6 +50,7 @@ st.sidebar.title('Table of Contents')
 
 toc.placeholder()
 
+st.text("\n")
 toc.header("Why Use My Recommender?")
 
 st.markdown("If you are one of those people who recently started investing in stocks, you might have heard your friends or so-called 'experts' around you say 'buy XYZ, it will double in six months!', or 'the EV industry is the next big thing, buy ABC to go along for the ride!' The truth is, investing is never that simple (if it was, we would have a lot more millionaire friends). Also, if you invest without getting properly educated, and simply buy stocks based on some tips or casual observations without any analysis, you end up not knowing what to do when the time comes for making a big decision, like should you buy more, hold, or sell when a stock is down 30%? The bottom line is: you need to do your own homework!")  
@@ -59,6 +61,7 @@ st.markdown("Okay, if this sounds all foreign to you, you have come to the right
          
 st.markdown("You might ask, 'Why do I need your recommender? I can just go on YouTube and find the videos myself!' Well, the reason is simple. As a beginner in stock investing, you are unlikely to be able to distinguish good, educational videos from bad, promotional, and often misleading videos.  And there are A LOT of the latter on YouTube, based on my own experience. So without further ado, let's start your investment journey!")
 
+st.text("\n")
 toc.header("Topics to Explore")
 
 st.markdown("The videos are categorized into 12 different topics on investing. Below are the brief descriptions of the topics and why they are important to learn as a beginner. You don't have to go from the top to bottom, but I have ordered them in a logical sequence so that you learn the basics of different investment styles before delving into the tools used in analyzing stocks.")
@@ -76,6 +79,7 @@ st.markdown("**Technology Stocks**: Over the past decade, the performance of the
 st.markdown("**Electric Vehicle Stocks**: One industry that has caught the investment world's attention over the last few years, is the electric vehicle industry, led by Tesla. While there are no doubts as to the fact that much of the meteoric rise in Tesla's stock price is euphoria-driven, it is still important to understand why the industry has gained so much popularity among not only retail but institutional investors, what the long-term trends are, and how one should value a company in this hyper-growth but cash flow-shy sector.")
 st.markdown("**General**: Investment topics that don't neatly fall under the above 11 categories are included here.")
 
+st.text("\n")
 toc.header('Initial Video Recommender')
 
 st.markdown("My recommender system is designed to generate a two-step recommendation: an initial set of video recommendations and a follow-up set of recommendations, both consisting of five videos. In the initial recommender, we let you choose your preferred topic, video duration, and upload date to narrow down the video candidates, and recommend the top five most relevant, high quality videos.") 
@@ -138,6 +142,7 @@ if session_state.search_button_init:
     df_videos_filtered = initial_recommender(df_videos_cleaned_v10, topic, duration, upload_date)[1]
     init_embedded_rec_videos(df_videos_recs_init)
     
+    st.text("\n")
     toc.header('Follow-up Video Recommender')
 
     st.markdown("For the follow-up video recommender, we let you pick your favorite video(s) from the initial recommender, and we will come up with five more recommended videos based on those favorite(s). If you didn't like any of the above videos, you can search for more videos in the initial recommender again!")
