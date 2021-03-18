@@ -35,6 +35,89 @@ class Toc:
         st.markdown(f"<{level} id='{key}'>{text}</{level}>", unsafe_allow_html=True)
         self._items.append(f"{space}* <a href='#{key}'>{text}</a>")
 
+def initial_recommender(df, topic, duration, upload_date):
+    '''
+    Input: Final dataframe of video data, user input on topic, duration, and upload date
+    Output: Top five recommendations
+    '''
+
+    ## Define a new variable to store the preferred videos. Copy the contents of df to filtered videos
+    df_videos_filtered = df.copy()
+
+    ## Return top five videos based on topic coefficient (how relevant the videos are to the user's topic)
+    df_videos_filtered = df_videos_filtered[(df_videos_filtered['Topic']==topic) & 
+                                      (df_videos_filtered['Duration']<duration) &
+                                      (df_videos_filtered['Months Since Upload']<upload_date)]
+    df_videos_filtered = df_videos_filtered.sort_values('Topic Coefficient', ascending=False)
+    
+    return df_videos_filtered[['Video_ID','Title']].head(), df_videos_filtered
+
+def init_embedded_rec_videos(df):
+    init_recs_video_ids = list(df['Video_ID'])
+    init_recs_video_titles = list(df['Title'])
+    init_recs_ids_titles = list(zip(init_recs_video_ids, init_recs_video_titles))
+    
+    for id, title in init_recs_ids_titles:
+        st.subheader(title)
+        st_player('www.youtube.com/watch?v=' + id)
+        st.text("\n")
+        
+def follow_up_recommender(liked_video_list, df_videos_filtered):
+    '''
+    Input: Video ID of a user's liked video, and the dataframe of the filtered videos generated from the initial recommender
+    Output: Top five follow-up recommendations using content-based recommender system
+    '''
+    ## Fit and transform the transcript into a document-term matrix
+    word_list = [[word[0] for word in eval(doc)] for doc in df_videos_filtered['Transcript']]
+    vec = TfidfVectorizer(tokenizer=lambda doc:doc, lowercase=False)
+    matrix = vec.fit_transform(word_list).toarray()
+
+    ## Generate a similarity matrix
+    similarity_matrix = cosine_similarity(matrix, matrix)
+
+    ## Create a series of titles for the videos (rows)  
+    df_videos_filtered = df_videos_filtered.reset_index(drop=True)
+    indices = pd.Series(df_videos_filtered['Title'])
+
+    ## Get the indices of the user's liked video(s)
+    idx_list = []
+    for liked_video in liked_video_list:
+        idx_list.append(indices[indices == liked_video].index[0])
+
+    ## Create a dataframe of the similarity matrix, but only showing columns for the liked videos
+    scores_list = []
+    for idx in idx_list:
+        scores_list.append(similarity_matrix[idx])
+
+    scores_df = pd.DataFrame(scores_list).T
+    scores_df.columns = idx_list
+
+    ## Drop videos that were in the original recommendation
+    scores_df.drop([0,1,2,3,4], inplace=True)
+
+    ## Calculate the mean cosine similarity score for each video    
+    mean_score_series = scores_df.mean(axis='columns').sort_values(ascending=False)
+
+    ## Get the indices of the five highest scores
+    similarity_indices = list(mean_score_series.index)
+    top_5_indices = similarity_indices[:5]
+
+    ## Populate a dataframe of the recommended videos
+    df_videos_follow_up_recs = df_videos_filtered.iloc[top_5_indices]
+
+    return df_videos_follow_up_recs[['Video_ID','Title']]
+    
+def follow_up_embedded_rec_videos(df):
+    follow_up_recs_video_ids = list(df['Video_ID'])
+    follow_up_recs_video_titles = list(df['Title'])
+    follow_up_recs_ids_titles = list(zip(follow_up_recs_video_ids, follow_up_recs_video_titles))
+
+    for id, title in follow_up_recs_ids_titles:
+        st.subheader(title)
+        st_player('www.youtube.com/watch?v=' + id)
+        st.text("\n")
+        
+        
 st.title('YouTube Video Recommender for Beginners in Stock Investing')
 
 st.subheader('_"The stock market is filled with individuals who know the price of everything, but the value of nothing."_ — Phillip Fisher')
@@ -106,33 +189,6 @@ st.markdown("**How recent would you like your videos to be (in months since uplo
 upload_date = st.slider('Less than:', 1, 60, 12)
 
 search_button_init = st.button('Search for recommended videos', key=1)
-
-def initial_recommender(df, topic, duration, upload_date):
-    '''
-    Input: Final dataframe of video data, user input on topic, duration, and upload date
-    Output: Top five recommendations
-    '''
-
-    ## Define a new variable to store the preferred videos. Copy the contents of df to filtered videos
-    df_videos_filtered = df.copy()
-
-    ## Return top five videos based on topic coefficient (how relevant the videos are to the user's topic)
-    df_videos_filtered = df_videos_filtered[(df_videos_filtered['Topic']==topic) & 
-                                      (df_videos_filtered['Duration']<duration) &
-                                      (df_videos_filtered['Months Since Upload']<upload_date)]
-    df_videos_filtered = df_videos_filtered.sort_values('Topic Coefficient', ascending=False)
-    
-    return df_videos_filtered[['Video_ID','Title']].head(), df_videos_filtered
-
-def init_embedded_rec_videos(df):
-    init_recs_video_ids = list(df['Video_ID'])
-    init_recs_video_titles = list(df['Title'])
-    init_recs_ids_titles = list(zip(init_recs_video_ids, init_recs_video_titles))
-    
-    for id, title in init_recs_ids_titles:
-        st.subheader(title)
-        st_player('www.youtube.com/watch?v=' + id)
-        st.text("\n")
         
 if search_button_init:
     session_state.search_button_init = True
@@ -151,61 +207,6 @@ if session_state.search_button_init:
     
     titles = list(df_videos_recs_init['Title'])
     session_state.video_id_follow_up = st.multiselect('Select one or more:', options=['', titles[0], titles[1], titles[2], titles[3], titles[4]])
-    
-    def follow_up_recommender(liked_video_list, df_videos_filtered):
-        '''
-        Input: Video ID of a user's liked video, and the dataframe of the filtered videos generated from the initial recommender
-        Output: Top five follow-up recommendations using content-based recommender system
-        '''
-        ## Fit and transform the transcript into a document-term matrix
-        word_list = [[word[0] for word in eval(doc)] for doc in df_videos_filtered['Transcript']]
-        vec = TfidfVectorizer(tokenizer=lambda doc:doc, lowercase=False)
-        matrix = vec.fit_transform(word_list).toarray()
-
-        ## Generate a similarity matrix
-        similarity_matrix = cosine_similarity(matrix, matrix)
-
-        ## Create a series of titles for the videos (rows)  
-        df_videos_filtered = df_videos_filtered.reset_index(drop=True)
-        indices = pd.Series(df_videos_filtered['Title'])
-
-        ## Get the indices of the user's liked video(s)
-        idx_list = []
-        for liked_video in liked_video_list:
-            idx_list.append(indices[indices == liked_video].index[0])
-
-        ## Create a dataframe of the similarity matrix, but only showing columns for the liked videos
-        scores_list = []
-        for idx in idx_list:
-            scores_list.append(similarity_matrix[idx])
-            
-        scores_df = pd.DataFrame(scores_list).T
-        scores_df.columns = idx_list
-            
-        ## Drop videos that were in the original recommendation
-        scores_df.drop([0,1,2,3,4], inplace=True)
-        
-        ## Calculate the mean cosine similarity score for each video    
-        mean_score_series = scores_df.mean(axis='columns').sort_values(ascending=False)
-        
-        ## Get the indices of the five highest scores
-        similarity_indices = list(mean_score_series.index)
-        top_5_indices = similarity_indices[:5]
-
-        ## Populate a dataframe of the recommended videos
-        df_videos_follow_up_recs = df_videos_filtered.iloc[top_5_indices]
-
-        return df_videos_follow_up_recs[['Video_ID','Title']]
-    
-    def follow_up_embedded_rec_videos(df):
-        follow_up_recs_video_ids = list(df['Video_ID'])
-        follow_up_recs_video_titles = list(df['Title'])
-        follow_up_recs_ids_titles = list(zip(follow_up_recs_video_ids, follow_up_recs_video_titles))
-    
-        for id, title in follow_up_recs_ids_titles:
-            st.subheader(title)
-            st_player('www.youtube.com/watch?v=' + id)
-            st.text("\n")
     
     if session_state.video_id_follow_up:
         session_state.search_button_follow_up = st.button('Search for recommended videos', key=2)
