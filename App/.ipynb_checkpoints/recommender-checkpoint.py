@@ -7,7 +7,7 @@ from PIL import Image
 from streamlit_player import st_player
 import SessionState
 
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 class Toc:
@@ -45,12 +45,13 @@ def initial_recommender(df, topic, duration, upload_date):
     df_videos_filtered = df.copy()
 
     ## Return top five videos based on topic coefficient (how relevant the videos are to the user's topic)
-    df_videos_filtered = df_videos_filtered[(df_videos_filtered['Topic']==topic) & 
+    df_videos_filtered_all = df_videos_filtered[(df_videos_filtered['Topic']==topic) & 
                                       (df_videos_filtered['Duration']<duration) &
                                       (df_videos_filtered['Months Since Upload']<upload_date)]
-    df_videos_filtered = df_videos_filtered.sort_values('Topic Coefficient', ascending=False)
+    df_videos_filtered_all = df_videos_filtered_all.sort_values('Topic Coefficient', ascending=False)
+    df_videos_filtered_topic = df_videos_filtered[df_videos_filtered['Topic']==topic]
     
-    return df_videos_filtered[['Video_ID','Title']].head(), df_videos_filtered
+    return df_videos_filtered_all[['Video_ID','Title']].head(), df_videos_filtered_all, df_videos_filtered_topic
 
 def init_embedded_rec_videos(df):
     init_recs_video_ids = list(df['Video_ID'])
@@ -69,7 +70,7 @@ def follow_up_recommender(liked_video_list, df_videos_filtered):
     '''
     ## Fit and transform the transcript into a document-term matrix
     word_list = [[word[0] for word in eval(doc)] for doc in df_videos_filtered['Transcript']]
-    vec = TfidfVectorizer(tokenizer=lambda doc:doc, lowercase=False)
+    vec = CountVectorizer(tokenizer=lambda doc:doc, lowercase=False)
     matrix = vec.fit_transform(word_list).toarray()
 
     ## Generate a similarity matrix
@@ -125,7 +126,7 @@ st.text("\n")
 
 image = Image.open('title_image.jpeg')
 st.image(image)
-st.markdown("_Source: Barron's_")
+st.markdown("_Source: Barron's._")
         
 toc = Toc()
 
@@ -150,16 +151,16 @@ toc.header("Topics to Explore")
 st.markdown("The videos are categorized into 12 different topics on investing. Below are the brief descriptions of the topics and why they are important to learn as a beginner. You don't have to go from the top to bottom, but I have ordered them in a logical sequence so that you learn the basics of different investment styles before delving into the tools used in analyzing stocks.")
 
 st.markdown("**Value Investing**: An investment strategy that involves picking stocks that appear to be trading for less than their intrinsic value. In the traditional sense, a value investor cares more about the value of a company's assets on the balance sheet and its current earnings power than its future growth. Benjamin Graham (the father of value investing) first institutionalized the concept in the 1930s, and has since become a pillar for other styles of investing. Naturally, a beginner looking to become a proper investor would want to understand the concept of value investing as his/her first stepping stone.")
-st.markdown("**Growth Investing vs. Value Investing**: Growth investing is an investment style/strategy that is focused on seeking companies that offer rapid revenue and earnings growth into the future, with asset values and the current earnings power taking a backseat. However, many investors view growth investing to be part of value investing, because growth is simply a component of value. It is important to learn why the distinction could get fuzzy.")
-st.markdown("**Long-term Investing**: This is not a separate investment style, but a philosophy that applies to all types of investing. It is crucial to understand why investing over the long-term stacks the odds in your favor simply due to the wonders of compounding returns, and every investor's behavioral bias and misconception in predicting short-term stock price movements (even some of the well-known investors are prone to this).")
-st.markdown("**Dividend Investing**: A strategy of buying stocks that pay periodic dividends in order to receive a regular income from your investments. A company has discretion over whether to pay a dividend out of its profit, and it is considered _after_ making all the internal investments needed to grow its business. Therefore, dividend stocks are typically found among stable, mature companies/industries generating ample excess cash flow (e.g., Consumer Staples, Utilities, and Telecom)")
+st.markdown("**Growth Investing**: Growth investing is an investment style/strategy that is focused on seeking companies that offer rapid revenue and earnings growth into the future, with asset values and the current earnings power taking a backseat. However, many investors view growth investing to be part of value investing, because growth is simply a component of value. It is important to learn why the distinction could get fuzzy.")
 st.markdown("**Passive Investing**: Broadly refers to an investment strategy that tracks a benchmark index or portfolio (e.g., S&P 500, Russell 3000). A passive investor has a buy-and-hold mentality and limits the amount of buying and selling within his/her portfolio, making this a very cost-effictive way to invest. In fact it is due to the low fees associated with passive investing, along with the underperformance of active funds in recent years that are pushing many stock investors (both institutional and retail) towards the former.")
-st.markdown("**Fundamental vs. Technical Analysis**: Two major schools of thought or approaches to making money in the stock market. Fundamental analysis involves studying a company's business operations, financial statements, and competitive/macro landscape in order to derive its intrinsic value (all the investment styles mentioned above require at least some fundamental analysis). Technical analysis is different in that _traders_ (not investors) attempt to identify opportunities by studying a stock's price/volume charts and finding patterns and trends in the short-term price movements. Technical analysis can be an ancillary component of an investor's stock analysis, but it should never be the main driver behind his/her investment thesis.")
+st.markdown("**Long-term Investing**: This is not a separate investment style, but a philosophy that applies to all types of investing. It is crucial to understand why investing over the long-term stacks the odds in your favor simply due to the wonders of compounding returns, and every investor's behavioral bias and misconception in predicting short-term stock price movements (even some of the well-known investors are prone to this).")
+# st.markdown("**Dividend Investing**: A strategy of buying stocks that pay periodic dividends in order to receive a regular income from your investments. A company has discretion over whether to pay a dividend out of its profit, and it is considered _after_ making all the internal investments needed to grow its business. Therefore, dividend stocks are typically found among stable, mature companies/industries generating ample excess cash flow (e.g., Consumer Staples, Utilities, and Telecom)")
+st.markdown("**Fundamental vs. Technical Analysis**: Two major schools of thought or approaches to making money in the stock market. Fundamental analysis involves studying a company's business operations, financial statements, and competitive/macro landscape in order to derive its intrinsic value (all the investment styles mentioned above require at least some fundamental analysis). Technical analysis is different in that _traders_ attempt to identify opportunities by studying a stock's price/volume charts and finding patterns and trends in the short-term price movements. Technical analysis can be an ancillary component of an investor's stock analysis, but it should never be the main driver behind his/her investment thesis.")
 st.markdown("**Economic Moats**: An economic moat is a distinct, sustainable advantage a company has over its competitors which allows it to protect its market share and profitability (like moats around a castle to protect against an invasion). It is often an advantage that is difficult to mimic or duplicate (brand identity, patents, network effects). Economic moats are one of the most important qualities that an investor should look for in a company when performing fundamental analysis with a long-term mindset.")
 st.markdown("**Valuation**: Valuation is an analytical process of determining the fair value of an asset or a company. There are many ways to valuing a company depending on which industry it is in, whether it is generating positive or negative cash flow, etc (many of the YouTube videos here delve into these different approaches). If finding economic moats is the ultimate goal of a qualitative analysis, valuation is the final quantitative output you want to get to compare to the company's current stock price, and determine if it is buy, hold, or a sell.")
-st.markdown("**Valuation (Case Studies)**: Valuation methods are hard to grasp with just theories and simple examples. Conducting case studies and walking through each step of a valuation process is helpful in cementing the logic behind how an intrinsic value is determined. A properly educated investor should have the skills to correctly use different valuation methods under varying situations, and as a result, have the conviction to make big investment decisions")
+# st.markdown("**Valuation (Case Studies)**: Valuation methods are hard to grasp with just theories and simple examples. Conducting case studies and walking through each step of a valuation process is helpful in cementing the logic behind how an intrinsic value is determined. A properly educated investor should have the skills to correctly use different valuation methods under varying situations, and as a result, have the conviction to make big investment decisions")
 st.markdown("**Technology Stocks**: Over the past decade, the performance of the stock market has mostly been driven by the so-called 'mega-cap tech stocks' or 'FAANGs'. It is important to study why these companys have outperformed for so long, what their differentiating qualities (or moats) are, and whether it is sustainable.")
-st.markdown("**Electric Vehicle Stocks**: One industry that has caught the investment world's attention over the last few years, is the electric vehicle industry, led by Tesla. While there are no doubts as to the fact that much of the meteoric rise in Tesla's stock price is euphoria-driven, it is still important to understand why the industry has gained so much popularity among not only retail but institutional investors, what the long-term trends are, and how one should value a company in this hyper-growth but cash flow-shy sector.")
+# st.markdown("**Electric Vehicle Stocks**: One industry that has caught the investment world's attention over the last few years, is the electric vehicle industry, led by Tesla. While there are no doubts as to the fact that much of the meteoric rise in Tesla's stock price is euphoria-driven, it is still important to understand why the industry has gained so much popularity among not only retail but institutional investors, what the long-term trends are, and how one should value a company in this hyper-growth but cash flow-shy sector.")
 st.markdown("**General**: Investment topics that don't neatly fall under the above 11 categories are included here.")
 
 st.text("\n")
@@ -175,7 +176,7 @@ st.markdown("**Which topic would you like to learn about?**")
 session_state = SessionState.get(search_button_init=False)
 
 topic_list = list(df_videos_cleaned_v10['Topic'].value_counts().index)
-topic_list_ordered = [topic_list[1], topic_list[11], topic_list[8], topic_list[9], topic_list[6], topic_list[4], topic_list[5], topic_list[2], topic_list[10], topic_list[3], topic_list[7], topic_list[0]]
+topic_list_ordered = [topic_list[3], topic_list[8], topic_list[6], topic_list[7], topic_list[4], topic_list[5], topic_list[1], topic_list[2], topic_list[0]]
 topic_list_ordered.insert(0,'')
 
 topic = st.selectbox('Select a topic:', options=topic_list_ordered)
@@ -196,6 +197,8 @@ if search_button_init:
 if session_state.search_button_init:
     df_videos_recs_init = initial_recommender(df_videos_cleaned_v10, topic, duration, upload_date)[0]
     df_videos_filtered = initial_recommender(df_videos_cleaned_v10, topic, duration, upload_date)[1]
+    df_videos_filtered_topic = initial_recommender(df_videos_cleaned_v10, topic, duration, upload_date)[2]
+    df_videos_other = pd.concat([df_videos_filtered.head(), df_videos_cleaned_v10.drop(df_videos_filtered_topic.index)])
     init_embedded_rec_videos(df_videos_recs_init)
     
     st.text("\n")
@@ -208,11 +211,17 @@ if session_state.search_button_init:
     titles = list(df_videos_recs_init['Title'])
     session_state.video_id_follow_up = st.multiselect('Select one or more:', options=['', titles[0], titles[1], titles[2], titles[3], titles[4]])
     
+    session_state.cross_intra_topic = st.radio('Select one:', ('Intra-topic', 'Cross-topic'))
+    
     if session_state.video_id_follow_up:
         session_state.search_button_follow_up = st.button('Search for recommended videos', key=2)
         if session_state.search_button_follow_up:
-            df_videos_recs_follow_up = follow_up_recommender(session_state.video_id_follow_up, df_videos_filtered)
-            follow_up_embedded_rec_videos(df_videos_recs_follow_up)
+            if session_state.cross_intra_topic=='Intra-topic':
+                df_videos_recs_follow_up = follow_up_recommender(session_state.video_id_follow_up, df_videos_filtered)
+                follow_up_embedded_rec_videos(df_videos_recs_follow_up)
+            else:
+                df_videos_recs_follow_up = follow_up_recommender(session_state.video_id_follow_up, df_videos_other)
+                follow_up_embedded_rec_videos(df_videos_recs_follow_up)
 
 toc.generate()
 
