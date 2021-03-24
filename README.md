@@ -50,6 +50,6 @@
 
 - Finally, I put my recommender inside a Streamlit app and deployed it publicly via Heroku. **You can visit [here](https://stockinvestingvideorec.herokuapp.com/) to try out my app!** 
 
-**Please check out my blog post on this project [here](https://mikechoi90.medium.com/youtube-video-recommender-for-beginners-in-stock-investing-3c3ddde8b94d)**
+**Please check out my blog post on this project [here](https://mikechoi90.medium.com/youtube-video-recommender-for-beginners-in-stock-investing-3c3ddde8b94d).**
 
 **Further plots and results can be found in the [project presentation](Presentation/Metis_Project5_PPT_vF.pdf). The main project code can by found in .py files and Jupyter notebooks located [here](Code).**
