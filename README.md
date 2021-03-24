@@ -1,4 +1,4 @@
-# Building a YouTube video recommender for beginners in stock investing
+# Building a YouTube Video Recommender for Beginners in Stock Investing
 
 ### Motivation - Incorporating NLP into qualitative investment analysis
 
